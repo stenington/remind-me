@@ -31,7 +31,7 @@ if (opts.help) {
     .write("  --pop           See and remove any reminders ready to send\n")
     .write("\n")
     .write("  --watch         Run continuously, popping reminders as they come up.\n")
-    // TODO: add no-bell, no-color
+    // TODO: add no-bell, no-color, f/force
     .write("\n")
     .write("  --on <date>     Set reminder for date\n")
     .write("  --today         Set reminder for today\n")
@@ -107,6 +107,7 @@ function set () {
 
   var what = opts.to || (opts._ && opts._.join(' ')) || '???';
   when = Date.parse(when);
+  // TODO: detect events in the past and alert?
 
   charm.write('Remind you to ')
     .foreground('yellow').write(what)
