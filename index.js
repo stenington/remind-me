@@ -102,9 +102,9 @@ function set () {
   when = Date.parse(when);
 
   charm.write('Remind you to ')
-    .display('bright').write(what)
+    .foreground('yellow').write(what)
     .display('reset').write(' on or after ')
-    .display('bright').write(when.toString('F'))
+    .foreground('blue').write(when.toString('F'))
     .display('reset').write('? [')
     .display('bright').write('Y')
     .display('reset').write('/n] ');
@@ -112,7 +112,8 @@ function set () {
   process.stdin.once('data', function (data) {
     data = data.trim() || 'y';
     if (data.toLowerCase() !== 'y') {
-      charm.foreground('red').write('Cancelled.\n');
+      charm.foreground('magenta').write("#--->\t")
+        .foreground('red').write('Cancelled.\n');
       process.exit(0);
     }
 
@@ -123,7 +124,8 @@ function set () {
         process.exit(1);
       }
       else {
-        charm.foreground('green').write('Ok!\n');
+        charm.foreground('magenta').write("#--->\t")
+          .foreground('green').write('Ok!\n');
         process.exit(0);
       }
     });
