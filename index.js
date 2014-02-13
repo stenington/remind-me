@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 require('datejs');
 var util = require('util');
 var path = require('path');
