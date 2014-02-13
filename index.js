@@ -54,7 +54,9 @@ function run (opts) {
     query(opts);
   }
   catch (err) {
-    charm.foreground('red').write('Oh no, an error!\n').write(err); 
+    charm
+      .foreground('red').write('Oh no, an error!\n')
+      .display('reset').write(err); 
     process.exit(1);
   }
 }
@@ -79,7 +81,8 @@ function query (opts) {
     }
 
     docs.forEach(function (doc) {
-      charm.foreground('magenta').write("#--->\t")
+      charm
+        .foreground('magenta').write("#--->\t")
         .foreground('blue').write(Date.parse(doc.when).toString('F'))
         .write('\t\t')
         .foreground('yellow').write(doc.what)
@@ -109,7 +112,8 @@ function set () {
   when = Date.parse(when);
   // TODO: detect events in the past and alert?
 
-  charm.write('Remind you to ')
+  charm
+    .write('Remind you to ')
     .foreground('yellow').write(what)
     .display('reset').write(' on or after ')
     .foreground('blue').write(when.toString('F'))
@@ -120,7 +124,8 @@ function set () {
   process.stdin.once('data', function (data) {
     data = data.trim() || 'y';
     if (data.toLowerCase() !== 'y') {
-      charm.foreground('magenta').write("#--->\t")
+      charm
+        .foreground('magenta').write("#--->\t")
         .foreground('red').write('Cancelled.\n');
       process.exit(0);
     }
@@ -137,7 +142,8 @@ function set () {
         process.exit(1);
       }
       else {
-        charm.foreground('magenta').write("#--->\t")
+        charm
+          .foreground('magenta').write("#--->\t")
           .foreground('green').write('Ok!\n');
         process.exit(0);
       }
