@@ -10,7 +10,6 @@ charm.pipe(process.stdout);
 process.stdin.resume();
 process.stdin.setEncoding('utf8');
 
-var db = new nedb({filename: path.join(__dirname, 'remind.db'), autoload: true});
 var bell = '\u0007';
 
 var opts = require('minimist')(process.argv.slice(2), {
@@ -65,14 +64,20 @@ function query (opts) {
 
   var now = Date.now(true);
   var q = {when: {$lte: now.toString('u')}};
-  db.find(q, function (err, docs) {
 
-    function done () {
+  var db = new nedb({
+    filename: path.join(__dirname, 'remind.db'),
+    autoload: true
+  });
+
+  db.find(q, function (err, docs) {
+    if (err) throw err;
+
+    function done (docs) {
       if (!opts.watch) process.exit(0);
-      else charm.write('\n' + bell);
+      else if (docs) charm.write('\n' + bell);
     }
 
-    if (err) throw err;
     docs.forEach(function (doc) {
       charm.foreground('magenta').write("#--->\t")
         .foreground('blue').write(Date.parse(doc.when).toString('F'))
@@ -83,9 +88,9 @@ function query (opts) {
 
     if (opts.remove) db.remove(q, {multi: true}, function (err) {
       if (err) throw err;
-      done();
+      done(docs.length);
     });
-    else done();
+    else done(docs.length);
   });
 }
 
@@ -118,6 +123,11 @@ function set () {
         .foreground('red').write('Cancelled.\n');
       process.exit(0);
     }
+
+    var db = new nedb({
+      filename: path.join(__dirname, 'remind.db'),
+      autoload: true
+    });
 
     db.insert({when: when.toString('u'), what: what}, function (err, doc) {
       if (err) {
