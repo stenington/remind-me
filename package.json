@@ -1,0 +1,15 @@
+{
+  "name": "remind-me",
+  "description": "Just a little reminder bot",
+  "version": "0.0.1",
+  "private": true,
+  "bin": {
+    "remind-me": "./index.js"
+  },
+  "dependencies": {
+    "charm": "~0.2.0",
+    "datejs": "~1.0.0-alpha",
+    "nedb": "~0.10.3",
+    "minimist": "0.0.7"
+  }
+}
