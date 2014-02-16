@@ -5,6 +5,7 @@ var util = require('util');
 var path = require('path');
 var nedb = require('nedb');
 var charm = require('charm')();
+var App = require('./lib/app');
 
 charm.pipe(process.stdout);
 process.stdin.resume();
@@ -44,6 +45,17 @@ if (opts.help) {
   process.exit(0);
 }
 
+var app = new App({
+  printDoc: function (doc) {
+    charm
+      .foreground('magenta').write("#--->\t")
+      .foreground('blue').write(doc.when)
+      .write('\t\t')
+      .foreground('yellow').write(doc.what)
+      .write('\n');
+  }
+});
+
 try {
   if (opts.peek) run({remove: false, watch: opts.watch});
   else if (opts.pop) run({remove: true, watch: opts.watch});
@@ -54,53 +66,14 @@ try {
 catch (err) {
   charm
     .foreground('red').write('Oh no, an error!\n')
-    .display('reset').write(err);
+    .display('reset').write(err.stack).write('\n');
   process.exit(1);
 }
 
 
 function run (opts) {
-  if (opts.watch) setInterval(check.bind(this, opts), 60000);
-  check(opts);
-}
-
-function check (opts) {
-  opts = opts || {};
-
-  var now = Date.now(true);
-  var q = {when: {$lte: now.toString('u')}};
-
-  query(q, opts);
-}
-
-function query(q, opts) {
-  opts = opts || {};
-
-  var db = getDb();
-
-  db.find(q).sort({when: 1}).exec(function (err, docs) {
-    if (err) throw err;
-
-    function done (docs) {
-      if (!opts.watch) return;
-      else if (docs) charm.write('\n' + bell);
-    }
-
-    docs.forEach(function (doc) {
-      charm
-        .foreground('magenta').write("#--->\t")
-        .foreground('blue').write(Date.parse(doc.when).toString('F'))
-        .write('\t\t')
-        .foreground('yellow').write(doc.what)
-        .write('\n');
-    });
-
-    if (opts.remove) db.remove(q, {multi: true}, function (err) {
-      if (err) throw err;
-      done(docs.length);
-    });
-    else done(docs.length);
-  });
+  if (opts.watch) setInterval(app.check.call(app, opts), 60000);
+  app.check(opts);
 }
 
 function see (span) {
@@ -113,12 +86,7 @@ function see (span) {
     return;
   }
 
-  var q = {};
-  if (span === 'today') {
-    q.when = {$lt: Date.parse('tomorrow').toString('u')};
-  }
-
-  query(q);
+  app.see(span);
 }
 
 function set () {
@@ -133,14 +101,13 @@ function set () {
   else if (opts.at) when += ' ' + opts.at;
 
   var what = opts.to || (opts._ && opts._.join(' ')) || '???';
-  when = Date.parse(when);
   // TODO: detect events in the past and alert?
 
   charm
     .write('Remind you to ')
     .foreground('yellow').write(what)
     .display('reset').write(' on or after ')
-    .foreground('blue').write(when.toString('F'))
+    .foreground('blue').write(app.parse(when))
     .display('reset').write('? [')
     .display('bright').write('Y')
     .display('reset').write('/n] ');
@@ -153,26 +120,13 @@ function set () {
         .foreground('red').write('Cancelled.\n');
       return;
     }
-
-    var db = new nedb({
-      filename: path.join(__dirname, 'remind.db'),
-      autoload: true
-    });
-
-    db.insert({when: when.toString('u'), what: what}, function (err, doc) {
+    
+    app.store(when, what, function (err) {
       if (err) throw err;
-      else {
+      else 
         charm
           .foreground('magenta').write("#--->\t")
           .foreground('green').write('Ok!\n');
-      }
     });
-  });
-}
-
-function getDb() {
-  return new nedb({
-    filename: path.join(__dirname, 'remind.db'),
-    autoload: true
   });
 }

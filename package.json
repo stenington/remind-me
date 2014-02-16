@@ -6,10 +6,17 @@
   "bin": {
     "remind-me": "./index.js"
   },
+  "scripts": {
+    "test": "./node_modules/.bin/mocha -R spec test/*.test.js"
+  },
   "dependencies": {
     "charm": "~0.2.0",
     "datejs": "~1.0.0-alpha",
     "nedb": "~0.10.3",
     "minimist": "0.0.7"
+  },
+  "devDependencies": {
+    "mocha": "~1.17.1",
+    "should": "~3.1.2"
   }
 }
