@@ -13,7 +13,7 @@ process.stdin.setEncoding('utf8');
 var bell = '\u0007';
 
 var opts = require('minimist')(process.argv.slice(2), {
-  boolean: ['today', 'tomorrow', 'noon', 'peek', 'pop', 'watch'],
+  boolean: ['today', 'tomorrow', 'noon', 'peek', 'pop', 'watch', 'see'],
   alias: {
     'help': 'h'
   }
@@ -29,6 +29,8 @@ if (opts.help) {
     .write("\n")
     .write("  --peek          See any reminders ready to send\n")
     .write("  --pop           See and remove any reminders ready to send\n")
+    .write("  --see           See upcoming reminders for today, or --see all\n")
+    .write("                    to see all upcoming reminders\n")
     .write("\n")
     .write("  --watch         Run continuously, popping reminders as they come up.\n")
     // TODO: add no-bell, no-color, f/force
@@ -42,41 +44,45 @@ if (opts.help) {
   process.exit(0);
 }
 
-if (opts.peek) run({remove: false, watch: opts.watch});
-else if (opts.pop) run({remove: true, watch: opts.watch});
-else if (opts.watch) run({remove: true, watch: true});
-else set();
+try {
+  if (opts.peek) run({remove: false, watch: opts.watch});
+  else if (opts.pop) run({remove: true, watch: opts.watch});
+  else if (opts.watch) run({remove: true, watch: true});
+  else if (opts.see) see(opts._[0]);
+  else set();
+}
+catch (err) {
+  charm
+    .foreground('red').write('Oh no, an error!\n')
+    .display('reset').write(err);
+  process.exit(1);
+}
 
 
 function run (opts) {
-  try {
-    if (opts.watch) setInterval(query.bind(this, opts), 60000);
-    query(opts);
-  }
-  catch (err) {
-    charm
-      .foreground('red').write('Oh no, an error!\n')
-      .display('reset').write(err); 
-    process.exit(1);
-  }
+  if (opts.watch) setInterval(check.bind(this, opts), 60000);
+  check(opts);
 }
 
-function query (opts) {
+function check (opts) {
   opts = opts || {};
 
   var now = Date.now(true);
   var q = {when: {$lte: now.toString('u')}};
 
-  var db = new nedb({
-    filename: path.join(__dirname, 'remind.db'),
-    autoload: true
-  });
+  query(q, opts);
+}
 
-  db.find(q, function (err, docs) {
+function query(q, opts) {
+  opts = opts || {};
+
+  var db = getDb();
+
+  db.find(q).sort({when: 1}).exec(function (err, docs) {
     if (err) throw err;
 
     function done (docs) {
-      if (!opts.watch) process.exit(0);
+      if (!opts.watch) return;
       else if (docs) charm.write('\n' + bell);
     }
 
@@ -95,6 +101,24 @@ function query (opts) {
     });
     else done(docs.length);
   });
+}
+
+function see (span) {
+  var span = span || 'today';
+
+  if (span !== 'today' && span !== 'all') {
+    charm
+      .foreground('magenta').write("#--->\t")
+      .foreground('red').write('Can only --see all or --see today\n');
+    return;
+  }
+
+  var q = {};
+  if (span === 'today') {
+    q.when = {$lt: Date.parse('tomorrow').toString('u')};
+  }
+
+  query(q);
 }
 
 function set () {
@@ -127,7 +151,7 @@ function set () {
       charm
         .foreground('magenta').write("#--->\t")
         .foreground('red').write('Cancelled.\n');
-      process.exit(0);
+      return;
     }
 
     var db = new nedb({
@@ -136,17 +160,19 @@ function set () {
     });
 
     db.insert({when: when.toString('u'), what: what}, function (err, doc) {
-      if (err) {
-        charm.foreground('red').write('Reminder not set!');
-        charm.write(err);
-        process.exit(1);
-      }
+      if (err) throw err;
       else {
         charm
           .foreground('magenta').write("#--->\t")
           .foreground('green').write('Ok!\n');
-        process.exit(0);
       }
     });
+  });
+}
+
+function getDb() {
+  return new nedb({
+    filename: path.join(__dirname, 'remind.db'),
+    autoload: true
   });
 }
