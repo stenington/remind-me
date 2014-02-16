@@ -8,8 +8,6 @@ var charm = require('charm')();
 var App = require('./lib/app');
 
 charm.pipe(process.stdout);
-process.stdin.resume();
-process.stdin.setEncoding('utf8');
 
 var bell = '\u0007';
 
@@ -72,7 +70,7 @@ catch (err) {
 
 
 function run (opts) {
-  if (opts.watch) setInterval(app.check.call(app, opts), 60000);
+  if (opts.watch) setInterval(app.check.bind(app, opts), 60000);
   app.check(opts);
 }
 
@@ -112,8 +110,12 @@ function set () {
     .display('bright').write('Y')
     .display('reset').write('/n] ');
 
+  process.stdin.resume();
+  process.stdin.setEncoding('utf8');
   process.stdin.once('data', function (data) {
+    process.stdin.pause();
     data = data.trim() || 'y';
+
     if (data.toLowerCase() !== 'y') {
       charm
         .foreground('magenta').write("#--->\t")
@@ -123,10 +125,9 @@ function set () {
     
     app.store(when, what, function (err) {
       if (err) throw err;
-      else 
-        charm
-          .foreground('magenta').write("#--->\t")
-          .foreground('green').write('Ok!\n');
+      charm
+        .foreground('magenta').write("#--->\t")
+        .foreground('green').write('Ok!\n');
     });
   });
 }
