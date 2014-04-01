@@ -1,6 +1,6 @@
 {
   "name": "remind-me",
-  "description": "Just a little reminder bot",
+  "description": "#---> Easy reminders for the forgetful",
   "version": "0.0.1",
   "private": true,
   "bin": {
