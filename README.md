@@ -1,5 +1,13 @@
 #remind-me
 
+## Installation
+
+``` sh
+git clone https://github.com/stenington/remind-me.git
+cd remind-me
+npm install -g .
+```
+
 ## Examples
 
 ### Add reminders
